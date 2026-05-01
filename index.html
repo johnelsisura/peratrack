@@ -189,12 +189,12 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height
 .pin-error{font-size:13px;color:var(--red);text-align:center;min-height:20px;margin-bottom:0.5rem}
 
 /* ═══ BOTTOM NAV ═══ */
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 2px 8px;cursor:pointer;gap:3px;transition:color 0.15s;color:var(--text3);border:none;background:none;font-family:var(--font);min-height:56px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;width:100%;position:relative}
-.nav-item::before{content:'';position:absolute;inset:0}
-.nav-item.active{color:var(--teal)}
-.nav-icon{font-size:18px;line-height:1;pointer-events:none;display:block}
-.nav-label{font-size:9px;font-weight:500;letter-spacing:0.02em;pointer-events:none;display:block}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;z-index:50;padding:6px 6px calc(6px + env(safe-area-inset-bottom));gap:2px}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--text3);border-radius:12px;transition:background 0.15s,color 0.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
+.nav-item.active{background:var(--teal-light);color:var(--teal)}
+.nav-item.active .nav-label{font-weight:700}
+.nav-icon{font-size:18px;line-height:1;display:block;pointer-events:none}
+.nav-label{font-size:9px;font-weight:500;letter-spacing:0.01em;display:block;pointer-events:none}
 
 /* ═══ APP ═══ */
 #screenApp{padding-bottom:var(--nav-h)}
@@ -218,6 +218,7 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height
 /* ═══ MINI STATS ═══ */
 .mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 1.25rem 0}
 .mini-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.7rem 0.75rem;box-shadow:var(--shadow-sm)}
+.home-stat-card:active{border-color:var(--teal);transform:scale(0.97)}
 .ms-lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);margin-bottom:4px}
 .ms-val{font-size:16px;font-weight:700;font-family:var(--font-display);letter-spacing:-0.5px}
 
@@ -892,6 +893,25 @@ function render(){
   else if(activeTab==='settings')renderSettings(scroll);
 }
 
+function toggleHomeDetail(id){
+  const panel=document.getElementById(id);
+  if(!panel)return;
+  const isIncome=id.includes('income');
+  const otherId=isIncome?'home-detail-expense':'home-detail-income';
+  const other=document.getElementById(otherId);
+  const chevronId=id.replace('home-detail-','home-chevron-');
+  const otherChevronId=otherId.replace('home-detail-','home-chevron-');
+  const isOpen=panel.style.display!=='none';
+  // close other first
+  if(other){other.style.display='none';}
+  const otherChevron=document.getElementById(otherChevronId);
+  if(otherChevron)otherChevron.style.transform='';
+  // toggle this
+  panel.style.display=isOpen?'none':'block';
+  const chevron=document.getElementById(chevronId);
+  if(chevron)chevron.style.transform=isOpen?'':'rotate(180deg)';
+}
+
 function renderHome(scroll,me,inc,exp,sav,bal,allSav,goal){
   const isPos=bal>=0,trendPct=inc>0?Math.round((bal/inc)*100):0;
   const pct=Math.min(100,Math.round(allSav/goal*100));
@@ -911,6 +931,23 @@ function renderHome(scroll,me,inc,exp,sav,bal,allSav,goal){
   for(let i=6;i>=0;i--){const d=new Date(today);d.setDate(today.getDate()-i);const ds=d.toISOString().split('T')[0];const amt=me.filter(e=>e.type==='expense'&&e.date===ds).reduce((a,e)=>a+e.amt,0);days7.push({ds,amt,isToday:i===0});}
   const maxAmt=Math.max(...days7.map(d=>d.amt),1);
 
+  // Income breakdown by category
+  const incCatT={};me.filter(e=>e.type==='income').forEach(e=>{incCatT[e.cat]=(incCatT[e.cat]||0)+e.amt});
+  const incRows=Object.entries(incCatT).sort((a,b)=>b[1]-a[1]).map(([c,a])=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:15px">${CAT_ICONS[c]||'💵'}</span>
+      <span style="flex:1;font-size:12px;color:var(--text2)">${c}</span>
+      <span style="font-size:13px;font-weight:700;font-family:var(--font-display);color:var(--teal)">${fmt(a)}</span>
+    </div>`).join('');
+
+  // Expense breakdown by category
+  const expRows=Object.entries(catT).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([c,a])=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:15px">${CAT_ICONS[c]||'💸'}</span>
+      <span style="flex:1;font-size:12px;color:var(--text2)">${c}</span>
+      <span style="font-size:13px;font-weight:700;font-family:var(--font-display);color:var(--red)">${fmt(a)}</span>
+    </div>`).join('');
+
   scroll.innerHTML=`
     <div class="hero-card" style="background:${isPos?'linear-gradient(135deg,#0F9B6E,#0d7a57)':'linear-gradient(135deg,#D94040,#b83030)'};margin:1rem 1.25rem 0;border-radius:20px;padding:1.5rem;position:relative;overflow:hidden">
       <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,0.08);border-radius:50%"></div>
@@ -922,11 +959,53 @@ function renderHome(scroll,me,inc,exp,sav,bal,allSav,goal){
       </div>
       <div class="momentum-badge">${inc===0?'🌱 Getting started':exp/inc>0.9?'⚠️ High spend month':exp/inc>0.7?'📊 Slight overspend':sav/inc>0.2?'🚀 Strong saving month':'✅ On track'}</div>
     </div>
+
     <div class="mini-stats">
-      <div class="mini-stat"><div class="ms-lbl">Income</div><div class="ms-val c-teal">${fmt(inc)}</div></div>
-      <div class="mini-stat"><div class="ms-lbl">Expenses</div><div class="ms-val c-red">${fmt(exp)}</div></div>
-      <div class="mini-stat"><div class="ms-lbl">Savings</div><div class="ms-val c-blue">${fmt(sav)}</div></div>
+      <!-- Income box -->
+      <div class="mini-stat home-stat-card" onclick="toggleHomeDetail('home-detail-income')" style="cursor:pointer;transition:all 0.15s">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div class="ms-lbl">Income</div>
+          <span id="home-chevron-income" style="font-size:10px;color:var(--text3);transition:transform 0.2s">▾</span>
+        </div>
+        <div class="ms-val c-teal">${fmt(inc)}</div>
+      </div>
+      <!-- Expenses box -->
+      <div class="mini-stat home-stat-card" onclick="toggleHomeDetail('home-detail-expense')" style="cursor:pointer;transition:all 0.15s">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div class="ms-lbl">Expenses</div>
+          <span id="home-chevron-expense" style="font-size:10px;color:var(--text3);transition:transform 0.2s">▾</span>
+        </div>
+        <div class="ms-val c-red">${fmt(exp)}</div>
+      </div>
+      <!-- Savings box — goes to savings tab -->
+      <div class="mini-stat home-stat-card" onclick="switchTab('savings')" style="cursor:pointer;transition:all 0.15s">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div class="ms-lbl">Savings</div>
+          <span style="font-size:10px;color:var(--teal)">›</span>
+        </div>
+        <div class="ms-val c-blue">${fmt(sav)}</div>
+      </div>
     </div>
+
+    <!-- Income detail panel -->
+    <div id="home-detail-income" style="display:none;margin:0 1.25rem;background:var(--surface);border:1px solid var(--teal);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);padding:0.75rem 1rem;box-shadow:var(--shadow-sm)">
+      ${incRows||'<div style="font-size:12px;color:var(--text3);padding:6px 0">No income entries this month.</div>'}
+      <div style="display:flex;justify-content:space-between;padding-top:8px;margin-top:2px">
+        <span style="font-size:12px;font-weight:700;color:var(--text)">Total</span>
+        <span style="font-size:13px;font-weight:800;font-family:var(--font-display);color:var(--teal)">${fmt(inc)}</span>
+      </div>
+    </div>
+
+    <!-- Expense detail panel -->
+    <div id="home-detail-expense" style="display:none;margin:0 1.25rem;background:var(--surface);border:1px solid var(--red);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);padding:0.75rem 1rem;box-shadow:var(--shadow-sm)">
+      ${expRows||'<div style="font-size:12px;color:var(--text3);padding:6px 0">No expense entries this month.</div>'}
+      ${Object.keys(catT).length>6?`<div style="font-size:11px;color:var(--text3);text-align:center;padding-top:6px">+ ${Object.keys(catT).length-6} more — see Transactions</div>`:''}
+      <div style="display:flex;justify-content:space-between;padding-top:8px;margin-top:2px">
+        <span style="font-size:12px;font-weight:700;color:var(--text)">Total</span>
+        <span style="font-size:13px;font-weight:800;font-family:var(--font-display);color:var(--red)">${fmt(exp)}</span>
+      </div>
+    </div>
+
     <div class="micro-charts">
       <div class="mc-card">
         <div class="mc-label">Savings Goal</div>

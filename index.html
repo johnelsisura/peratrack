@@ -190,7 +190,7 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height
 .pin-error{font-size:13px;color:var(--red);text-align:center;min-height:20px;margin-bottom:0.5rem}
 
 /* ═══ BOTTOM NAV ═══ */
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;z-index:50;padding:6px 6px calc(6px + env(safe-area-inset-bottom));gap:2px}
+.bottom-nav{width:100%;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;z-index:50;padding:6px 6px calc(6px + env(safe-area-inset-bottom));gap:2px;flex-shrink:0}
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--text3);border-radius:12px;transition:background 0.15s,color 0.15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
 .nav-item.active{background:var(--teal-light);color:var(--teal)}
 .nav-item.active .nav-label{font-weight:700}
@@ -198,7 +198,7 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height
 .nav-label{font-size:9px;font-weight:500;letter-spacing:0.01em;display:block;pointer-events:none}
 
 /* ═══ APP ═══ */
-#screenApp{padding-bottom:var(--nav-h)}
+#screenApp{min-height:0;height:100dvh;overflow:hidden}
 .app-header{padding:0.85rem 1.25rem 0.6rem;display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--border)}
 .app-avatar{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0}
 .app-header-info{flex:1;min-width:0}
@@ -684,7 +684,7 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height
 </div>
 
 <!-- ══ APP SCREEN ══ -->
-<div class="screen" id="screenApp">
+<div class="screen" id="screenApp" style="min-height:0;height:100dvh;overflow:hidden;display:flex;flex-direction:column">
   <div class="app-header">
     <img src="https://raw.githubusercontent.com/johnelsisura/peratrack/main/favicon.png" alt="PERA TRACK" onclick="goHome()" style="height:30px;width:auto;object-fit:contain;cursor:pointer;flex-shrink:0;border-radius:6px" title="Back to Home">
     <div class="app-avatar" id="appAvatar"></div>
@@ -699,19 +699,17 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height
       <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option>
     </select>
   </div>
-  <div class="scroll" id="appScroll"></div>
+  <div class="scroll" id="appScroll" style="flex:1;overflow-y:auto;min-height:0"></div>
+  <div class="bottom-nav" id="bottomNav">
+    <button class="nav-item active" id="nav-home" onclick="switchTab('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></button>
+    <button class="nav-item" id="nav-transactions" onclick="switchTab('transactions')"><span class="nav-icon">📋</span><span class="nav-label">Transactions</span></button>
+    <button class="nav-item" id="nav-savings" onclick="switchTab('savings')"><span class="nav-icon">🏦</span><span class="nav-label">Savings</span></button>
+    <button class="nav-item" id="nav-insights" onclick="switchTab('insights')"><span class="nav-icon">📊</span><span class="nav-label">Insights</span></button>
+    <button class="nav-item" id="nav-plan" onclick="switchTab('plan')"><span class="nav-icon">🎯</span><span class="nav-label">Plan</span></button>
+    <button class="nav-item" id="nav-settings" onclick="switchTab('settings')"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></button>
+  </div>
+  <button class="fab" id="fabBtn" onclick="openEntryModal()" style="position:absolute;bottom:80px;right:20px">+</button>
 </div>
-
-<!-- ══ BOTTOM NAV (body level — not inside screenApp) ══ -->
-<div class="bottom-nav" id="bottomNav" style="display:none">
-  <button class="nav-item active" id="nav-home" onclick="switchTab('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></button>
-  <button class="nav-item" id="nav-transactions" onclick="switchTab('transactions')"><span class="nav-icon">📋</span><span class="nav-label">Transactions</span></button>
-  <button class="nav-item" id="nav-savings" onclick="switchTab('savings')"><span class="nav-icon">🏦</span><span class="nav-label">Savings</span></button>
-  <button class="nav-item" id="nav-insights" onclick="switchTab('insights')"><span class="nav-icon">📊</span><span class="nav-label">Insights</span></button>
-  <button class="nav-item" id="nav-plan" onclick="switchTab('plan')"><span class="nav-icon">🎯</span><span class="nav-label">Plan</span></button>
-  <button class="nav-item" id="nav-settings" onclick="switchTab('settings')"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></button>
-</div>
-<button class="fab" id="fabBtn" onclick="openEntryModal()" style="display:none">+</button>
 
 <!-- ══ ENTRY MODAL ══ -->
 <div class="modal-bg hidden" id="entryModal" onclick="if(event.target===this)closeEntryModal()">
@@ -860,21 +858,16 @@ function openApp(){
   av.textContent=p.emoji;av.style.background=p.color;
   document.getElementById('appName').textContent=p.name;
   document.getElementById('monthSel').value=new Date().getMonth();
-  document.getElementById('bottomNav').style.display='flex';
   activeTab='home';showScreen('screenApp');updateNavActive();render();
   switchTab('home');
 }
 function logout(){
   activeId=null;pinBuffer='';
-  document.getElementById('bottomNav').style.display='none';
-  document.getElementById('fabBtn').style.display='none';
   const si=document.getElementById('profileSearch');if(si)si.value='';
   showScreen('screenProfiles');renderProfiles();
 }
 function goHome(){
   activeId=null;pinBuffer='';
-  document.getElementById('bottomNav').style.display='none';
-  document.getElementById('fabBtn').style.display='none';
   showScreen('screenHome');
 }
 function getMonthEntries(){const m=getMonth();return(activeP().entries||[]).filter(e=>e.date&&new Date(e.date+'T00:00').getMonth()===m);}
@@ -882,7 +875,8 @@ function getMonthEntries(){const m=getMonth();return(activeP().entries||[]).filt
 function switchTab(t){
   if(!activeId)return;
   activeTab=t;updateNavActive();
-  document.getElementById('fabBtn').style.display=(t==='plan'||t==='settings'||t==='insights'||t==='savings')?'none':'flex';
+  const fab=document.getElementById('fabBtn');
+  if(fab)fab.style.display=(t==='plan'||t==='settings'||t==='insights'||t==='savings')?'none':'flex';
   render();
 }
 function updateNavActive(){

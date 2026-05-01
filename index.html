@@ -1007,12 +1007,6 @@ function renderHome(scroll,me,inc,exp,sav,bal,allSav,allInc,allExp,netBal,goal){
   const netBalPos=netBal>=0;
 
   scroll.innerHTML=`
-    <!-- Overall Net Balance -->
-    <div class="overall-card">
-      <div class="overall-val ${privacyMode?'privacy-hidden':''}">${netBalPos?'+':''}${fmt(netBal)}</div>
-      <div class="overall-sub">Income ${fmtPriv(allInc)} · Expenses ${fmtPriv(allExp)} · Savings ${fmtPriv(allSav)}</div>
-    </div>
-
     <!-- Monthly Balance Hero -->
     <div style="background:${isPos?'linear-gradient(135deg,#0F9B6E,#0d7a57)':'linear-gradient(135deg,#D94040,#b83030)'};margin:0.75rem 1.25rem 0;border-radius:20px;padding:1.5rem;position:relative;overflow:hidden">
       <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,0.08);border-radius:50%"></div>

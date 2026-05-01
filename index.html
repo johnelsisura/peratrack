@@ -698,6 +698,30 @@ function showToast(msg){
 
 loadAll();renderProfiles();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  const SUPABASE_URL = "https://afveodtxjhhjcfhrlvxr.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmdmVvZHR4amhoamNmaHJsdnhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1OTk2MTQsImV4cCI6MjA5MzE3NTYxNH0.qZDnG4IW0paK9KIe03SB3lBZRrF3wdGY4VLlfAbG3Y4";
+
+  const sb = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+</script>
+
+<script>
+  function showToast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2000);
+  }
+
+  /* IMPORTANT: RUN ONLY AFTER sb exists */
+  loadAll();
+  renderProfiles();
+</script>
 <footer style="text-align:center;padding:18px 12px;font-size:12px;color:var(--text3);border-top:1px solid var(--border);background:var(--bg);">
   PERA TRACK is a personal finance tracking tool designed for clarity and control over your finances.<br>
   © 2026 PERA TRACK. Built for disciplined financial tracking.

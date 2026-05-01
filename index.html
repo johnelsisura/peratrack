@@ -406,6 +406,23 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height
 
 /* Net balance trend line */
 .trend-svg{width:100%;height:60px}
+
+/* ═══ PERIOD FILTER BUTTONS ═══ */
+.period-btn{flex-shrink:0;padding:5px 12px;border:1.5px solid var(--border);border-radius:99px;font-size:12px;font-weight:600;font-family:var(--font);color:var(--text3);background:var(--surface);cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.period-btn.active{background:var(--teal);color:#fff;border-color:var(--teal)}
+.period-btn:active{transform:scale(0.95)}
+
+/* ═══ BANK ACCOUNT CARDS ═══ */
+.bank-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;box-shadow:var(--shadow-sm);margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color 0.2s,transform 0.1s}
+.bank-card:active{transform:scale(0.98);border-color:var(--teal)}
+.bank-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.bank-info{flex:1;min-width:0}
+.bank-name{font-size:14px;font-weight:700;font-family:var(--font-display)}
+.bank-balance{font-size:18px;font-weight:800;font-family:var(--font-display);letter-spacing:-0.5px;color:var(--teal)}
+.bank-actions{display:flex;gap:6px;margin-top:0.75rem;flex-wrap:wrap}
+.bank-btn{padding:6px 14px;border-radius:99px;border:1px solid var(--border);background:var(--surface2);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);color:var(--text2);transition:all 0.15s}
+.bank-btn.primary{background:var(--teal);color:#fff;border-color:var(--teal)}
+.bank-btn:active{opacity:0.8}
 </style>
 </head>
 <body>
@@ -541,18 +558,26 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height
 
 <!-- ══ APP SCREEN ══ -->
 <div class="screen" id="screenApp" style="min-height:0;height:100dvh;overflow:hidden;display:flex;flex-direction:column">
-  <div class="app-header">
-    <img src="https://raw.githubusercontent.com/johnelsisura/peratrack/main/favicon.png" alt="PT" onclick="goHome()" style="height:30px;width:auto;object-fit:contain;cursor:pointer;flex-shrink:0;border-radius:6px">
-    <div class="app-avatar" id="appAvatar" onclick="switchTab('settings')"></div>
-    <div class="app-header-info">
-      <div class="name" id="appName"></div>
-      <div class="sub">Finance Tracker 2026</div>
+  <div class="app-header" style="flex-direction:column;align-items:stretch;gap:0;padding:0">
+    <div style="display:flex;align-items:center;gap:10px;padding:0.75rem 1.25rem 0.5rem">
+      <img src="https://raw.githubusercontent.com/johnelsisura/peratrack/main/favicon.png" alt="PT" onclick="goHome()" style="height:30px;width:auto;object-fit:contain;cursor:pointer;flex-shrink:0;border-radius:6px">
+      <div class="app-avatar" id="appAvatar" onclick="switchTab('settings')"></div>
+      <div class="app-header-info">
+        <div class="name" id="appName"></div>
+        <div class="sub">Finance Tracker 2026</div>
+      </div>
+      <button class="privacy-toggle" id="privacyBtn" onclick="togglePrivacy()" title="Toggle Privacy Mode">&#128065;</button>
     </div>
-    <button class="privacy-toggle" id="privacyBtn" onclick="togglePrivacy()" title="Toggle Privacy Mode">👁</button>
-    <select class="month-sel" id="monthSel" onchange="render()">
-      <option value="0">Jan</option><option value="1">Feb</option><option value="2">Mar</option><option value="3">Apr</option><option value="4">May</option><option value="5">Jun</option><option value="6">Jul</option><option value="7">Aug</option><option value="8">Sep</option><option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option>
-    </select>
+    <div style="display:flex;gap:6px;overflow-x:auto;padding:0 1.25rem 0.65rem;scrollbar-width:none" id="periodFilterBar">
+      <button class="period-btn active" id="pbtn-may2026" onclick="setPeriodFilter('may2026')">&#128197; May 2026</button>
+      <button class="period-btn" id="pbtn-apr2026" onclick="setPeriodFilter('apr2026')">April 2026</button>
+      <button class="period-btn" id="pbtn-mar2026" onclick="setPeriodFilter('mar2026')">March 2026</button>
+      <button class="period-btn" id="pbtn-alltime" onclick="setPeriodFilter('alltime')">All Time</button>
+    </div>
   </div>
+  <select id="monthSel" style="display:none" onchange="render()">
+    <option value="0">Jan</option><option value="1">Feb</option><option value="2">Mar</option><option value="3">Apr</option><option value="4">May</option><option value="5">Jun</option><option value="6">Jul</option><option value="7">Aug</option><option value="8">Sep</option><option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option>
+  </select>
   <div class="scroll" id="appScroll" style="flex:1;overflow-y:auto;min-height:0"></div>
   <div class="bottom-nav" id="bottomNav">
     <button class="nav-item active" id="nav-home" onclick="switchTab('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></button>
@@ -576,9 +601,7 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height
       <button class="pill" id="pill-savings" onclick="setType('savings')">Savings</button>
     </div>
     <div class="field"><label>Category</label><select id="fCat"></select></div>
-    <div class="field" id="fAccountField"><label>Account</label><select id="fAccount"><option value="">— Select Account —</option><option value="CASH">💵 CASH</option><option value="BDO">🏦 BDO</option><option value="LANDBANK">🏦 LANDBANK</option><option value="BPI">🏦 BPI</option><option value="CIMB">🏦 CIMB</option><option value="GCASH">📱 GCASH</option><option value="GOTYME">📱 GOTYME</option><option value="MARIBANK">🏦 MARIBANK</option><option value="MAYA">📱 MAYA</option><option value="METROBANK">🏦 METROBANK</option><option value="TONIK">🏦 TONIK</option><option value="UNIONDIGITAL BANK">🏦 UNIONDIGITAL BANK</option><option value="UNO DIGITAL BANK">🏦 UNO DIGITAL BANK</option></select></div>
     <div class="field"><label>Description</label><input type="text" id="fDesc" placeholder="Optional"></div>
-    <div class="field" id="fTransferToField" style="display:none"><label>Transfer To Account</label><select id="fTransferTo"><option value="">— Select Destination —</option><option value="CASH">💵 CASH</option><option value="BDO">🏦 BDO</option><option value="LANDBANK">🏦 LANDBANK</option><option value="BPI">🏦 BPI</option><option value="CIMB">🏦 CIMB</option><option value="GCASH">📱 GCASH</option><option value="GOTYME">📱 GOTYME</option><option value="MARIBANK">🏦 MARIBANK</option><option value="MAYA">📱 MAYA</option><option value="METROBANK">🏦 METROBANK</option><option value="TONIK">🏦 TONIK</option><option value="UNIONDIGITAL BANK">🏦 UNIONDIGITAL BANK</option><option value="UNO DIGITAL BANK">🏦 UNO DIGITAL BANK</option></select></div>
     <div class="field"><label>Amount (₱)</label><input type="number" id="fAmt" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
     <div class="field"><label>Date</label><input type="date" id="fDate"></div>
     <div class="field"><label>Notes</label><input type="text" id="fNotes" placeholder="Optional"></div>
@@ -714,6 +737,53 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height
   </div>
 </div>
 
+<!-- ══ BANK ACCOUNT MODAL ══ -->
+<div class="modal-bg hidden" id="bankModal" onclick="if(event.target===this)closeBankModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="bankModalTitle">Bank Account</h3>
+    <div class="field"><label>Account Name</label><input type="text" id="bmName" placeholder="e.g. BDO Savings"></div>
+    <div class="field"><label>Account Type</label>
+      <select id="bmType">
+        <option value="CASH">💵 CASH</option>
+        <option value="BDO">🏦 BDO</option>
+        <option value="LANDBANK">🏦 LANDBANK</option>
+        <option value="BPI">🏦 BPI</option>
+        <option value="CIMB">🏦 CIMB</option>
+        <option value="GCASH">📱 GCASH</option>
+        <option value="GOTYME">📱 GOTYME</option>
+        <option value="MARIBANK">🏦 MARIBANK</option>
+        <option value="MAYA">📱 MAYA</option>
+        <option value="METROBANK">🏦 METROBANK</option>
+        <option value="TONIK">🏦 TONIK</option>
+        <option value="UNIONDIGITAL">🏦 UNIONDIGITAL BANK</option>
+        <option value="UNODB">🏦 UNO DIGITAL BANK</option>
+        <option value="OTHER">💳 OTHER</option>
+      </select>
+    </div>
+    <div class="field"><label>Balance (₱)</label><input type="number" id="bmBalance" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+    <div class="field"><label>Notes (optional)</label><input type="text" id="bmNotes" placeholder="Optional"></div>
+    <input type="hidden" id="bmId">
+    <button class="btn-primary" onclick="saveBankAccount()">Save Account</button>
+    <button class="btn-ghost" id="bmDeleteBtn" style="color:var(--red);display:none" onclick="deleteBankAccount()">Delete Account</button>
+    <button class="btn-ghost" onclick="closeBankModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- ══ BANK TRANSFER MODAL ══ -->
+<div class="modal-bg hidden" id="transferModal" onclick="if(event.target===this)closeTransferModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>Transfer Between Accounts</h3>
+    <div class="field"><label>From Account</label><select id="trFrom"></select></div>
+    <div class="field"><label>To Account</label><select id="trTo"></select></div>
+    <div class="field"><label>Amount (₱)</label><input type="number" id="trAmt" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+    <div class="field"><label>Notes (optional)</label><input type="text" id="trNotes" placeholder="Optional"></div>
+    <button class="btn-primary" onclick="doTransfer()">Transfer</button>
+    <button class="btn-ghost" onclick="closeTransferModal()">Cancel</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- ══ EMOTIONAL FEEDBACK ══ -->
@@ -759,6 +829,8 @@ let selCmEmoji=CAT_EMOJIS[0],selCmColor=COLORS[0];
 let selGmEmoji='🏦';
 let selEpEmoji=EMOJIS[0],selEpColor=COLORS[0];
 let insightsView='monthly'; // 'monthly' or 'alltime'
+let activePeriod='may2026'; // global period filter: 'may2026','apr2026','mar2026','alltime'
+let editingBankId=null;
 
 const fmt=n=>'₱'+Math.abs(n).toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0});
 const fmtPriv=n=>privacyMode?'•••••':fmt(n);
@@ -856,12 +928,64 @@ function checkPin(){
   }
 }
 
+// ═══ PERIOD FILTER ═══
+const PERIOD_MAP={
+  'may2026':{m:4,y:2026,label:'May 2026'},
+  'apr2026':{m:3,y:2026,label:'April 2026'},
+  'mar2026':{m:2,y:2026,label:'March 2026'},
+  'alltime':{m:null,y:null,label:'All Time'}
+};
+function setPeriodFilter(p){
+  activePeriod=p;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('pbtn-'+p);
+  if(btn)btn.classList.add('active');
+  // Sync hidden month selector for legacy getMonth()/getYear()
+  const pm=PERIOD_MAP[p];
+  if(pm&&pm.m!==null){
+    document.getElementById('monthSel').value=pm.m;
+  }
+  render();
+}
+
+function getPeriodEntries(){
+  const allE=activeP().entries||[];
+  if(activePeriod==='alltime')return allE;
+  const pm=PERIOD_MAP[activePeriod];
+  if(!pm||pm.m===null)return allE;
+  return allE.filter(e=>{
+    if(!e.date)return false;
+    const d=new Date(e.date+'T00:00');
+    return d.getMonth()===pm.m&&d.getFullYear()===pm.y;
+  });
+}
+
+function getPrevPeriodEntries(){
+  const allE=activeP().entries||[];
+  if(activePeriod==='alltime')return [];
+  const pm=PERIOD_MAP[activePeriod];
+  if(!pm||pm.m===null)return [];
+  const pm2=pm.m===0?{m:11,y:pm.y-1}:{m:pm.m-1,y:pm.y};
+  return allE.filter(e=>{
+    if(!e.date)return false;
+    const d=new Date(e.date+'T00:00');
+    return d.getMonth()===pm2.m&&d.getFullYear()===pm2.y;
+  });
+}
+
+function getPeriodLabel(){
+  return PERIOD_MAP[activePeriod]?.label||'May 2026';
+}
+
 function openApp(){
   const p=activeP();
   const av=document.getElementById('appAvatar');
   av.textContent=p.emoji;av.style.background=p.color;
   document.getElementById('appName').textContent=p.name;
-  document.getElementById('monthSel').value=new Date().getMonth();
+  document.getElementById('monthSel').value=4; // May
+  activePeriod='may2026';
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('pbtn-may2026');if(btn)btn.classList.add('active');
   privacyMode=false;
   document.getElementById('privacyBtn').textContent='👁';
   activeTab='home';showScreen('screenApp');updateNavActive();render();
@@ -899,7 +1023,7 @@ function render(){
   const goal=activeP().goal||50000;
   const scroll=document.getElementById('appScroll');
   if(activeTab==='home')renderHome(scroll,me,inc,exp,sav,bal,allSav,allInc,allExp,netBal,goal);
-  else if(activeTab==='transactions')renderTransactions(scroll);
+  else if(activeTab==='transactions')renderTransactions(scroll,me);
   else if(activeTab==='savings')renderSavings(scroll);
   else if(activeTab==='insights')renderInsights(scroll,me,inc,exp,sav,allSav,allInc,allExp,goal);
   else if(activeTab==='plan')renderPlan(scroll);
@@ -948,19 +1072,23 @@ function renderHome(scroll,me,inc,exp,sav,bal,allSav,allInc,allExp,netBal,goal){
   const netBalPos=netBal>=0;
 
   scroll.innerHTML=`
-    <!-- All-Time Net Balance — Primary Card -->
-    <div style="background:linear-gradient(135deg,#0F9B6E,#064D36);margin:1rem 1.25rem 0;border-radius:20px;padding:1.5rem;position:relative;overflow:hidden">
+    <!-- Overall Net Balance -->
+    <div class="overall-card">
+      <div class="overall-lbl">Overall Net Balance (All-Time)</div>
+      <div class="overall-val ${privacyMode?'privacy-hidden':''}">${netBalPos?'+':''}${fmt(netBal)}</div>
+      <div class="overall-sub">Income ${fmtPriv(allInc)} · Expenses ${fmtPriv(allExp)} · Savings ${fmtPriv(allSav)}</div>
+    </div>
+
+    <!-- Monthly Balance Hero -->
+    <div style="background:${isPos?'linear-gradient(135deg,#0F9B6E,#0d7a57)':'linear-gradient(135deg,#D94040,#b83030)'};margin:0.75rem 1.25rem 0;border-radius:20px;padding:1.5rem;position:relative;overflow:hidden">
       <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(255,255,255,0.08);border-radius:50%"></div>
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.7);margin-bottom:6px;font-weight:600">All-Time Net Balance</div>
-      <div style="font-family:var(--font-display);font-size:38px;font-weight:800;letter-spacing:-1.5px;line-height:1;margin-bottom:6px;color:#fff" class="${privacyMode?'privacy-hidden':''}">${netBalPos?'+':''}${fmt(netBal)}</div>
-      <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-bottom:10px">Income ${fmtPriv(allInc)} · Expenses ${fmtPriv(allExp)} · Savings ${fmtPriv(allSav)}</div>
-      <!-- Monthly toggle -->
-      <div style="background:rgba(0,0,0,0.2);border-radius:var(--radius-xs);padding:0.75rem;margin-top:4px">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.65);margin-bottom:4px;font-weight:500">Net Balance · ${MONTH_NAMES[getMonth()]}</div>
-        <div style="font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-1px;color:${isPos?'#fff':'#ffaaaa'}" class="${privacyMode?'privacy-hidden':''}">${isPos?'+':''}${fmt(bal)}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.65);margin-top:3px"><span style="background:rgba(255,255,255,0.15);padding:2px 8px;border-radius:99px">${isPos?'↑':'↓'} ${Math.abs(trendPct)}% of income · ${isPos?'positive':'negative'}</span></div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.75);margin-bottom:8px;font-weight:500">Net Balance · ${MONTH_NAMES[getMonth()]}</div>
+      <div style="font-family:var(--font-display);font-size:38px;font-weight:800;letter-spacing:-1.5px;line-height:1;margin-bottom:6px;color:#fff" class="${privacyMode?'privacy-hidden':''}">${fmt(bal)}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.75);display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="background:rgba(255,255,255,0.18);padding:3px 8px;border-radius:99px;font-size:11px;font-weight:600">${isPos?'↑':'↓'} ${Math.abs(trendPct)}% of income</span>
+        <span>${isPos?'positive growth':'negative trend'}</span>
       </div>
-      <div class="momentum-badge" style="margin-top:8px">${inc===0?'🌱 Getting started':exp/inc>0.9?'⚠️ High spend month':exp/inc>0.7?'📊 Slight overspend':sav/inc>0.2?'🚀 Strong saving month':'✅ On track'}</div>
+      <div class="momentum-badge">${inc===0?'🌱 Getting started':exp/inc>0.9?'⚠️ High spend month':exp/inc>0.7?'📊 Slight overspend':sav/inc>0.2?'🚀 Strong saving month':'✅ On track'}</div>
     </div>
 
     <div class="mini-stats">
@@ -1010,21 +1138,18 @@ function renderHome(scroll,me,inc,exp,sav,bal,allSav,allInc,allExp,netBal,goal){
 }
 
 // ═══ TRANSACTIONS TAB ═══
-function renderTransactions(scroll){
+function renderTransactions(scroll,me){
   const p=activeP();
-  const allEntries=(p.entries||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const searchId='txnSearch_'+Date.now();
+  let allMe=[...me];
   let h=`<div class="content-area">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
-      <div style="font-size:13px;font-weight:700;font-family:var(--font-display)">All Transactions</div>
-      <div style="font-size:11px;color:var(--text3)">${allEntries.length} entries</div>
-    </div>
     <div style="position:relative;margin-bottom:0.75rem">
       <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none">🔍</span>
-      <input type="text" id="txnSearchBox" placeholder="Search by description, category, or ref code…" oninput="filterTxnListAll()" style="width:100%;padding:9px 12px 9px 34px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:13px;font-family:var(--font);outline:none" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--border)'">
+      <input type="text" id="txnSearchBox" placeholder="Search by description, category, or ref code…" oninput="filterTxnList()" style="width:100%;padding:9px 12px 9px 34px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:13px;font-family:var(--font);outline:none" onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--border)'">
     </div>
     <div id="txnListWrap">`;
-  if(!allEntries.length){h+='<div class="empty" style="padding-top:3rem"><div class="empty-icon">📋</div><strong>No entries yet</strong><p>Add your first income or expense<br>to start tracking.</p></div>';}
-  else{h+=renderTxnListAll(allEntries,p);}
+  if(!me.length){h+='<div class="empty" style="padding-top:3rem"><div class="empty-icon">📋</div><strong>No entries yet</strong><p>Add your first income or expense<br>to start tracking.</p></div>';}
+  else{h+=renderTxnList(me,p);}
   h+=`</div></div>`;
   scroll.innerHTML=h;
 }
@@ -1054,53 +1179,6 @@ function renderTxnList(entries,p){
   return h;
 }
 
-function renderTxnListAll(entries,p){
-  // Group by YYYY-MM for month headers
-  const byMonth={};
-  entries.forEach(e=>{
-    if(!e.date)return;
-    const key=e.date.slice(0,7); // YYYY-MM
-    if(!byMonth[key])byMonth[key]=[];
-    byMonth[key].push(e);
-  });
-  let h='';
-  Object.keys(byMonth).sort((a,b)=>b.localeCompare(a)).forEach(monthKey=>{
-    const [y,m]=monthKey.split('-');
-    const monthLabel=`${MONTH_NAMES[parseInt(m)-1]} ${y}`;
-    const monthEntries=byMonth[monthKey];
-    const monthInc=monthEntries.filter(e=>e.type==='income').reduce((a,e)=>a+e.amt,0);
-    const monthExp=monthEntries.filter(e=>e.type==='expense').reduce((a,e)=>a+e.amt,0);
-    const monthNet=monthInc-monthExp;
-    h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:0.85rem 0 0.4rem;border-top:1px solid var(--border);margin-top:0.25rem">
-      <div style="font-size:12px;font-weight:700;font-family:var(--font-display);letter-spacing:-0.2px">${monthLabel}</div>
-      <div style="font-size:11px;font-weight:600;color:${monthNet>=0?'var(--teal)':'var(--red)'}">${monthNet>=0?'+':''}${fmtPriv(Math.abs(monthNet))}</div>
-    </div>`;
-    // Group by date within month
-    const byDate={};
-    monthEntries.forEach(e=>{if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e)});
-    Object.keys(byDate).sort((a,b)=>b.localeCompare(a)).forEach(d=>{
-      const lbl=new Date(d+'T00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'});
-      const dayAmt=byDate[d].reduce((a,e)=>a+(e.type==='income'?e.amt:e.type==='expense'?-e.amt:0),0);
-      h+=`<div class="date-label" style="display:flex;justify-content:space-between;align-items:center;padding-left:8px">${lbl}<span style="font-size:10px;font-weight:600;color:${dayAmt>=0?'var(--teal)':'var(--red)'}">${dayAmt>=0?'+':''}${fmtPriv(Math.abs(dayAmt))}</span></div>`;
-      byDate[d].forEach(e=>{
-        const ci=getCatInfo(p,e.cat);
-        const col=e.type==='income'?'c-teal':e.type==='expense'?'c-red':'c-blue';
-        const sign=e.type==='expense'?'-':'+';
-        const acct=e.account?`<span style="font-size:10px;background:var(--surface2);border-radius:4px;padding:1px 5px;margin-left:2px">${e.account}</span>`:'';
-        h+=`<div class="entry ${e.type}" onclick="openTxnDetail('${e.id}')">
-          <div class="entry-icon ei-${e.type}">${ci.emoji||'💸'}</div>
-          <div class="entry-body">
-            <div class="entry-desc">${e.desc||e.cat}</div>
-            <div class="entry-sub">${e.cat}${acct}${e.ref_code?' · <span class="ref-code">'+e.ref_code+'</span>':''}${e.notes?' · '+e.notes:''}</div>
-          </div>
-          <div class="entry-amt ${col} ${privacyMode?'privacy-hidden':''}">${e.type==='savings'?'':sign}${fmt(e.amt)}</div>
-        </div>`;
-      });
-    });
-  });
-  return h;
-}
-
 function filterTxnList(){
   const q=(document.getElementById('txnSearchBox')?.value||'').toLowerCase().trim();
   const p=activeP();
@@ -1108,15 +1186,6 @@ function filterTxnList(){
   const filtered=!q?me:me.filter(e=>(e.desc||'').toLowerCase().includes(q)||(e.cat||'').toLowerCase().includes(q)||(e.ref_code||'').toLowerCase().includes(q)||(e.notes||'').toLowerCase().includes(q));
   const wrap=document.getElementById('txnListWrap');
   if(wrap)wrap.innerHTML=filtered.length?renderTxnList(filtered,p):'<div class="empty"><div class="empty-icon">🔍</div><strong>No results</strong><p>Try searching by category or amount.</p></div>';
-}
-
-function filterTxnListAll(){
-  const q=(document.getElementById('txnSearchBox')?.value||'').toLowerCase().trim();
-  const p=activeP();
-  const allEntries=(p.entries||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  const filtered=!q?allEntries:allEntries.filter(e=>(e.desc||'').toLowerCase().includes(q)||(e.cat||'').toLowerCase().includes(q)||(e.ref_code||'').toLowerCase().includes(q)||(e.notes||'').toLowerCase().includes(q)||(e.account||'').toLowerCase().includes(q));
-  const wrap=document.getElementById('txnListWrap');
-  if(wrap)wrap.innerHTML=filtered.length?renderTxnListAll(filtered,p):'<div class="empty"><div class="empty-icon">🔍</div><strong>No results</strong><p>Try searching by category, description, or account.</p></div>';
 }
 
 // ═══ TRANSACTION DETAIL ═══

@@ -350,8 +350,42 @@ let selEmoji=EMOJIS[0];
 const fmt=n=>'₱'+Math.abs(n).toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0});
 const getMonth=()=>parseInt(document.getElementById('monthSel').value);
 
-function loadAll(){try{profiles=JSON.parse(localStorage.getItem('fin_v3_profiles')||'[]')}catch(e){profiles=[]}}
-function saveAll(){try{localStorage.setItem('fin_v3_profiles',JSON.stringify(profiles))}catch(e){}}
+async function loadAll(){
+  // 1. Load profiles
+  const { data: profData, error: profError } = await sb
+    .from('profiles')
+    .select('*');
+
+  if (profError) {
+    console.error(profError);
+    profiles = [];
+    return;
+  }
+
+  // 2. Load entries (NEW)
+  const { data: entryData, error: entryError } = await sb
+    .from('entries')
+    .select('*');
+
+  if (entryError) {
+    console.error(entryError);
+  }
+
+  // 3. Merge entries into profiles
+  profiles = (profData || []).map(p => ({
+    ...p,
+    entries: (entryData || []).filter(e => e.profile_id === p.id),
+    plan: p.plan || {...DEF_PLAN}
+  }));
+}
+
+async function saveProfile(profile){
+  const { error } = await sb
+    .from('profiles')
+    .upsert(profile);
+
+  if (error) console.error(error);
+}
 function getP(id){return profiles.find(p=>p.id===id)}
 function activeP(){return getP(activeId)}
 
@@ -646,14 +680,45 @@ function setType(t){
   const cats=t==='income'?INCOME_CATS:t==='expense'?EXPENSE_CATS:SAVINGS_CATS;
   document.getElementById('fCat').innerHTML=cats.map(c=>`<option>${c}</option>`).join('');
 }
-function addEntry(){
+async function addEntry(){
   const amt=parseFloat(document.getElementById('fAmt').value);
   if(!amt||isNaN(amt)||amt<=0){showToast('Enter a valid amount');return;}
-  const entry={id:Date.now().toString(),type:activeType,cat:document.getElementById('fCat').value,desc:document.getElementById('fDesc').value.trim(),amt,date:document.getElementById('fDate').value,notes:document.getElementById('fNotes').value.trim()};
-  const p=activeP();if(!p.entries)p.entries=[];
-  p.entries.push(entry);saveAll();closeEntryModal();
-  document.getElementById('monthSel').value=new Date(entry.date+'T00:00').getMonth();
-  render();showToast('Saved ✓');
+
+  const entry={
+    id:Date.now().toString(),
+    profile_id: activeId,
+    type:activeType,
+    cat:document.getElementById('fCat').value,
+    desc:document.getElementById('fDesc').value.trim(),
+    amt,
+    date:document.getElementById('fDate').value,
+    notes:document.getElementById('fNotes').value.trim()
+  };
+
+  // 1. SAVE TO SUPABASE
+  const { error } = await sb
+    .from('entries')
+    .insert([entry]);
+
+  if(error){
+    console.log(error);
+    showToast('Failed to save entry');
+    return;
+  }
+
+  // 2. LOCAL UPDATE
+  const p=activeP();
+  if(!p.entries) p.entries=[];
+  await sb.from('entries').insert([{
+  ...entry,
+  profile_id: activeId
+}]);
+
+p.entries.push(entry);
+
+  closeEntryModal();
+  render();
+  showToast('Saved ✓');
 }
 function delEntry(id){
   if(!confirm('Delete this entry?'))return;
@@ -681,14 +746,44 @@ function renderEmojiRow(){
     `<div class="edot${e===selEmoji?' sel':''}" onclick="selEmoji='${e}';renderEmojiRow()">${e}</div>`
   ).join('');
 }
-function saveNewProfile(){
+async function saveNewProfile(){
   const name=document.getElementById('npName').value.trim();
   const pin=document.getElementById('npPin').value.trim();
   const goal=parseFloat(document.getElementById('npGoal').value)||50000;
+
   if(!name){showToast('Enter a name');return;}
   if(pin.length!==4||!/^\d{4}$/.test(pin)){showToast('PIN must be 4 digits');return;}
-  profiles.push({id:Date.now().toString(),name,pin,color:selColor,emoji:selEmoji,goal,entries:[],plan:{...DEF_PLAN}});
-  saveAll();closeNewProfile();renderProfiles();showToast('Profile created!');
+
+  const profile = {
+    id: Date.now().toString(),
+    name,
+    pin,
+    color: selColor,
+    emoji: selEmoji,
+    goal
+  };
+
+  // 1. SAVE TO SUPABASE
+  const { error } = await sb
+    .from('profiles')
+    .insert([profile]);
+
+  if(error){
+    console.log(error);
+    showToast('Failed to save to cloud');
+    return;
+  }
+
+  // 2. OPTIONAL LOCAL CACHE (for faster UI)
+  profiles.push({
+    ...profile,
+    entries: [],
+    plan: {...DEF_PLAN}
+  });
+
+  closeNewProfile();
+  renderProfiles();
+  showToast('Profile saved to cloud ✓');
 }
 
 function showToast(msg){
@@ -696,7 +791,10 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2000);
 }
 
-loadAll();renderProfiles();
+(async () => {
+  await loadAll();
+  renderProfiles();
+})();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -719,8 +817,10 @@ loadAll();renderProfiles();
   }
 
   /* IMPORTANT: RUN ONLY AFTER sb exists */
-  loadAll();
+  (async () => {
+  await loadAll();
   renderProfiles();
+})();
 </script>
 <footer style="text-align:center;padding:18px 12px;font-size:12px;color:var(--text3);border-top:1px solid var(--border);background:var(--bg);">
   PERA TRACK is a personal finance tracking tool designed for clarity and control over your finances.<br>

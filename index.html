@@ -699,16 +699,18 @@ body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;min-height
     </select>
   </div>
   <div class="scroll" id="appScroll"></div>
-  <div class="bottom-nav">
-    <button class="nav-item active" id="nav-home" onclick="switchTab('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></button>
-    <button class="nav-item" id="nav-transactions" onclick="switchTab('transactions')"><span class="nav-icon">📋</span><span class="nav-label">Transactions</span></button>
-    <button class="nav-item" id="nav-savings" onclick="switchTab('savings')"><span class="nav-icon">🏦</span><span class="nav-label">Savings</span></button>
-    <button class="nav-item" id="nav-insights" onclick="switchTab('insights')"><span class="nav-icon">📊</span><span class="nav-label">Insights</span></button>
-    <button class="nav-item" id="nav-plan" onclick="switchTab('plan')"><span class="nav-icon">🎯</span><span class="nav-label">Plan</span></button>
-    <button class="nav-item" id="nav-settings" onclick="switchTab('settings')"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></button>
-  </div>
-  <button class="fab" id="fabBtn" onclick="openEntryModal()">+</button>
 </div>
+
+<!-- ══ BOTTOM NAV (body level — not inside screenApp) ══ -->
+<div class="bottom-nav" id="bottomNav" style="display:none">
+  <button class="nav-item active" id="nav-home" onclick="switchTab('home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></button>
+  <button class="nav-item" id="nav-transactions" onclick="switchTab('transactions')"><span class="nav-icon">📋</span><span class="nav-label">Transactions</span></button>
+  <button class="nav-item" id="nav-savings" onclick="switchTab('savings')"><span class="nav-icon">🏦</span><span class="nav-label">Savings</span></button>
+  <button class="nav-item" id="nav-insights" onclick="switchTab('insights')"><span class="nav-icon">📊</span><span class="nav-label">Insights</span></button>
+  <button class="nav-item" id="nav-plan" onclick="switchTab('plan')"><span class="nav-icon">🎯</span><span class="nav-label">Plan</span></button>
+  <button class="nav-item" id="nav-settings" onclick="switchTab('settings')"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></button>
+</div>
+<button class="fab" id="fabBtn" onclick="openEntryModal()" style="display:none">+</button>
 
 <!-- ══ ENTRY MODAL ══ -->
 <div class="modal-bg hidden" id="entryModal" onclick="if(event.target===this)closeEntryModal()">
@@ -813,7 +815,7 @@ function renderProfiles(){
     const ents=p.entries||[],m=new Date().getMonth();
     const me=ents.filter(e=>e.date&&new Date(e.date+'T00:00').getMonth()===m);
     const inc=me.filter(e=>e.type==='income').reduce((a,e)=>a+e.amt,0);
-    const meta=ents.length===0?'No entries yet — tap to get started':`${MONTH_NAMES[m]}: ${fmt(inc)} income · ${me.length} entries`;
+    const meta=ents.length===0?'No entries yet — tap to get started':`${MONTH_NAMES[m]}: ${me.length} entr${me.length===1?'y':'ies'} this month`;
     return `<div class="profile-card" data-name="${p.name.toLowerCase()}" onclick="startPin('${p.id}')">
       <div class="avatar" style="background:${p.color}">${p.emoji}</div>
       <div class="profile-info"><div class="profile-name">${p.name}</div><div class="profile-meta">${meta}</div></div>
@@ -857,10 +859,23 @@ function openApp(){
   av.textContent=p.emoji;av.style.background=p.color;
   document.getElementById('appName').textContent=p.name;
   document.getElementById('monthSel').value=new Date().getMonth();
+  document.getElementById('bottomNav').style.display='flex';
   activeTab='home';showScreen('screenApp');updateNavActive();render();
+  switchTab('home');
 }
-function logout(){activeId=null;pinBuffer='';const si=document.getElementById('profileSearch');if(si)si.value='';showScreen('screenProfiles');renderProfiles();}
-function goHome(){activeId=null;pinBuffer='';showScreen('screenHome');}
+function logout(){
+  activeId=null;pinBuffer='';
+  document.getElementById('bottomNav').style.display='none';
+  document.getElementById('fabBtn').style.display='none';
+  const si=document.getElementById('profileSearch');if(si)si.value='';
+  showScreen('screenProfiles');renderProfiles();
+}
+function goHome(){
+  activeId=null;pinBuffer='';
+  document.getElementById('bottomNav').style.display='none';
+  document.getElementById('fabBtn').style.display='none';
+  showScreen('screenHome');
+}
 function getMonthEntries(){const m=getMonth();return(activeP().entries||[]).filter(e=>e.date&&new Date(e.date+'T00:00').getMonth()===m);}
 
 function switchTab(t){
